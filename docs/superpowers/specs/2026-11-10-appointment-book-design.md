@@ -97,9 +97,21 @@ A visit row stores the salon, the stylist, the optional client, `starts_at` as a
 
 **Italian copy.** One module holds the strings in this spec. Screens read from it.
 
-## Stack
+## Hosting
 
-Next.js with TypeScript, one Postgres database, deployed so both phones use the same data. The intended host is Vercel and the intended database is Neon. Local development uses the same schema through a Postgres connection string.
+The app is a Next.js TypeScript project on Vercel, with Neon as the only database. This matches Viscardi and Poligest.
+
+`vercel.json` pins functions to `cdg1` in Paris. The app has no cron.
+
+Neon is one project in `aws-eu-west-2`. The production branch is the salon's book. A second branch is for local development and Vercel preview deployments, so a test visit never appears on the live day.
+
+Prisma uses `@prisma/adapter-neon`. The running app reads `DATABASE_URL`, the pooled Neon host. Migrations read `DIRECT_URL`, the same branch without the pooler. Both URLs are stored with `sslmode=require` and `connect_timeout=15`. They live in the Vercel project env and in a local `.env` file. They are never committed.
+
+Vercel production receives the production branch URLs. The local `.env` and preview deployments receive the dev branch URLs.
+
+The salon PIN stays in this app's session cookie. Neon Auth is not used.
+
+The exclusion constraint and the unique phone digits are created in a Prisma migration. Booking-rule tests stay pure and do not need a database. The constraint and the stale `updated_at` check also run against the dev branch when `TEST_DATABASE_URL` is set, and they are skipped when it is unset.
 
 ## Tests
 

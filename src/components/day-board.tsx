@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { legalStarts, parseMinutes } from "@/lib/calendar";
+import { LAST_START_MINUTES, legalStarts, parseMinutes } from "@/lib/calendar";
 import { DURATIONS, DEFAULT_DURATION, DEFAULT_STATUS } from "@/lib/booking";
 import { STATUS_CODES, copy, statusLabel } from "@/lib/copy";
 import type { Clash, ClientHit, DayPayload, DayVisit } from "@/lib/types";
+import { redirectIfUnauthorized } from "@/lib/unauthorized";
 
 const ROW_PX = 44;
 const OPEN_MINUTE = 9 * 60;
@@ -86,6 +87,7 @@ export function DayBoard({
       if (document.visibilityState === "hidden") return;
       try {
         const response = await fetch(`/api/giorno?d=${day.dateKey}`, { cache: "no-store" });
+        if (redirectIfUnauthorized(response.status)) return;
         if (!response.ok) return;
         const next = (await response.json()) as DayPayload;
         if (!stop) setDay(next);
@@ -120,6 +122,7 @@ export function DayBoard({
         const response = await fetch(`/api/clienti?q=${encodeURIComponent(query)}`, {
           cache: "no-store",
         });
+        if (redirectIfUnauthorized(response.status)) return;
         if (!response.ok) return;
         const body = (await response.json()) as { clients: ClientHit[] };
         setResults(body.clients.slice(0, 8));
@@ -132,6 +135,7 @@ export function DayBoard({
 
   async function reloadDay() {
     const response = await fetch(`/api/giorno?d=${day.dateKey}`, { cache: "no-store" });
+    if (redirectIfUnauthorized(response.status)) return;
     if (!response.ok) return;
     setDay((await response.json()) as DayPayload);
   }
@@ -149,6 +153,7 @@ export function DayBoard({
         dateKey?: string;
         start?: string;
       };
+      if (redirectIfUnauthorized(response.status)) return;
       if (!response.ok || !body.dateKey || !body.start) {
         setNotice(body.error ?? copy.closed);
         return;
@@ -209,6 +214,7 @@ export function DayBoard({
         clash?: Clash;
         visit?: DayVisit;
       };
+      if (redirectIfUnauthorized(response.status)) return;
       if (!response.ok) {
         setError(body.error ?? copy.offline);
         if (body.clash) setClash(body.clash);
@@ -288,7 +294,10 @@ export function DayBoard({
           error={error}
           clash={clash}
           pending={pending}
-          onChange={setSheet}
+          onChange={(next) => {
+            if (sheet && (next.name !== sheet.name || next.phone !== sheet.phone)) setClash(null);
+            setSheet(next);
+          }}
           onAttach={attach}
           onUseClash={() => {
             if (!clash) return;
@@ -349,25 +358,37 @@ function Column({
         {copy.walkIn}
       </button>
       <div className="relative" style={{ height: slots.length * ROW_PX }}>
-        {slots.map((slot, index) => (
-          <button
-            key={slot}
-            type="button"
-            onClick={() => {
-              const slotMinute = parseMinutes(slot) ?? 0;
-              const cover = blocking.find((visit) => {
-                const start = parseMinutes(visit.start) ?? 0;
-                return slotMinute >= start && slotMinute < start + visit.durationMinutes;
-              });
-              if (cover) onVisit(cover);
-              else onEmpty(slot);
-            }}
-            className="absolute right-0 left-0 border-t border-[#e7dccb] px-1 text-left text-[11px] text-[#8a7d6d]"
-            style={{ top: index * ROW_PX, height: ROW_PX }}
-          >
-            {slot}
-          </button>
-        ))}
+        {slots.map((slot, index) => {
+          const slotMinute = parseMinutes(slot) ?? 0;
+          const className =
+            "absolute right-0 left-0 border-t border-[#e7dccb] px-1 text-left text-[11px] text-[#8a7d6d]";
+          const style = { top: index * ROW_PX, height: ROW_PX };
+          if (slotMinute > LAST_START_MINUTES) {
+            return (
+              <div key={slot} className={className} style={style}>
+                {slot}
+              </div>
+            );
+          }
+          return (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => {
+                const cover = blocking.find((visit) => {
+                  const start = parseMinutes(visit.start) ?? 0;
+                  return slotMinute >= start && slotMinute < start + visit.durationMinutes;
+                });
+                if (cover) onVisit(cover);
+                else onEmpty(slot);
+              }}
+              className={className}
+              style={style}
+            >
+              {slot}
+            </button>
+          );
+        })}
         {quiet.map((visit) => {
           const start = parseMinutes(visit.start) ?? OPEN_MINUTE;
           return (

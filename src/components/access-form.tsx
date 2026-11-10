@@ -33,7 +33,6 @@ export function AccessForm() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
-      <p className="mb-2 text-center text-sm tracking-[0.2em] text-[#8a7d6d] uppercase">Salon</p>
       <h1 className="mb-8 text-center font-serif text-4xl">Agenda</h1>
       <form onSubmit={onSubmit} className="rounded-3xl bg-[#fffaf3] p-5 shadow-sm">
         <label className="block">

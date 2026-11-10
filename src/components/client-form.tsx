@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { copy } from "@/lib/copy";
 import type { ClientDetail } from "@/lib/types";
+import { redirectIfUnauthorized } from "@/lib/unauthorized";
 
 export function ClientForm({ client }: { client: ClientDetail }) {
   const router = useRouter();
@@ -25,6 +26,7 @@ export function ClientForm({ client }: { client: ClientDetail }) {
         body: JSON.stringify({ name, phone, note }),
       });
       const body = (await response.json().catch(() => ({}))) as { error?: string };
+      if (redirectIfUnauthorized(response.status)) return;
       if (!response.ok) {
         setError(body.error ?? copy.offline);
         return;

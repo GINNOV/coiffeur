@@ -4,6 +4,7 @@ import { dateKeyInRome, dayBounds, isClosed, timeInRome, zonedTimeToUtc } from "
 import { STATUS_CODES, copy } from "@/lib/copy";
 import { phoneDigits, resolveVisitClient } from "@/lib/clients";
 import { messageForCode } from "@/lib/messages";
+import { isOverlapError } from "@/lib/overlap-error";
 import type { Clash, DayVisit } from "@/lib/types";
 import { getPrisma } from "@/server/prisma";
 import { toVisit } from "@/server/day";
@@ -246,15 +247,6 @@ function toOccupying(row: {
     durationMinutes: row.durationMinutes,
     status: row.status,
   };
-}
-
-export function isOverlapError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes("23P01") ||
-    message.includes("Appointment_blocking_no_overlap") ||
-    message.toLowerCase().includes("exclusion constraint")
-  );
 }
 
 export function isUniqueError(error: unknown): boolean {

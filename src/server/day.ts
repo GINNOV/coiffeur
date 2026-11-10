@@ -1,0 +1,62 @@
+import "server-only";
+import { addDays, dayBounds, dayHeading, isClosed, timeInRome } from "@/lib/calendar";
+import type { DayPayload, DayVisit } from "@/lib/types";
+import { getPrisma } from "@/server/prisma";
+
+export async function loadDay(salonId: string, dateKey: string): Promise<DayPayload> {
+  const prisma = getPrisma();
+  const stylists = await prisma.stylist.findMany({
+    where: { salonId },
+    orderBy: { position: "asc" },
+  });
+  const { start, end } = dayBounds(dateKey);
+  const rows = await prisma.appointment.findMany({
+    where: { salonId, startsAt: { gte: start, lt: end } },
+    include: { client: true },
+    orderBy: { startsAt: "asc" },
+  });
+  const visitsByStylist = new Map<string, DayVisit[]>();
+  for (const row of rows) {
+    const list = visitsByStylist.get(row.stylistId) ?? [];
+    list.push(toVisit(row));
+    visitsByStylist.set(row.stylistId, list);
+  }
+  return {
+    dateKey,
+    heading: dayHeading(dateKey),
+    closed: isClosed(dateKey),
+    prev: addDays(dateKey, -1),
+    next: addDays(dateKey, 1),
+    stylists: stylists.map((stylist) => ({
+      id: stylist.id,
+      name: stylist.name,
+      position: stylist.position,
+      visits: visitsByStylist.get(stylist.id) ?? [],
+    })),
+  };
+}
+
+export function toVisit(row: {
+  id: string;
+  stylistId: string;
+  clientId: string | null;
+  startsAt: Date;
+  durationMinutes: number;
+  service: string;
+  status: string;
+  updatedAt: Date;
+  client: { name: string; phone: string } | null;
+}): DayVisit {
+  return {
+    id: row.id,
+    stylistId: row.stylistId,
+    clientId: row.clientId,
+    clientName: row.client?.name ?? "",
+    phone: row.client?.phone ?? "",
+    service: row.service,
+    status: row.status,
+    start: timeInRome(row.startsAt),
+    durationMinutes: row.durationMinutes,
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}

@@ -12,6 +12,14 @@ export function messageForCode(code: string): string {
       return copy.stale;
     case "phone_taken":
       return copy.phoneTaken;
+    case "like_long":
+      return copy.likeLong;
+    case "like_many":
+      return copy.likeMany;
+    case "photo_big":
+      return copy.photoBig;
+    case "photo_type":
+      return copy.photoType;
     default:
       return copy.offline;
   }

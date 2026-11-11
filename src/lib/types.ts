@@ -1,3 +1,8 @@
+export type VisitPhotos = {
+  prima: string | null;
+  dopo: string | null;
+};
+
 export type DayVisit = {
   id: string;
   stylistId: string;
@@ -5,10 +10,12 @@ export type DayVisit = {
   clientName: string;
   phone: string;
   service: string;
+  request: string;
   status: string;
   start: string;
   durationMinutes: number;
   updatedAt: string;
+  photos: VisitPhotos;
 };
 
 export type DayStylist = {
@@ -40,7 +47,9 @@ export type ClientVisitRow = {
   dateKey: string;
   stylistName: string;
   service: string;
+  request: string;
   status: string;
+  photos: VisitPhotos;
 };
 
 export type ClientDetail = {
@@ -48,6 +57,7 @@ export type ClientDetail = {
   name: string;
   phone: string;
   note: string;
+  likes: string[];
   visits: ClientVisitRow[];
 };
 

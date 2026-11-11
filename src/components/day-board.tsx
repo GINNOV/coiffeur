@@ -6,8 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LAST_START_MINUTES, legalStarts, parseMinutes } from "@/lib/calendar";
 import { DURATIONS, DEFAULT_DURATION, DEFAULT_STATUS } from "@/lib/booking";
 import { STATUS_CODES, copy, statusLabel } from "@/lib/copy";
-import type { Clash, ClientHit, DayPayload, DayVisit } from "@/lib/types";
+import type { Clash, ClientHit, DayPayload, DayVisit, VisitPhotos } from "@/lib/types";
 import { redirectIfUnauthorized } from "@/lib/unauthorized";
+import { VisitPhotosFields } from "@/components/visit-photos";
 
 const ROW_PX = 44;
 const OPEN_MINUTE = 9 * 60;
@@ -19,11 +20,13 @@ type Sheet = {
   name: string;
   phone: string;
   service: string;
+  request: string;
   durationMinutes: number;
   status: string;
   clientId: string | null;
   attached: boolean;
   updatedAt: string | null;
+  photos: VisitPhotos;
 };
 
 function blankSheet(stylistId: string, start: string): Sheet {
@@ -34,11 +37,13 @@ function blankSheet(stylistId: string, start: string): Sheet {
     name: "",
     phone: "",
     service: "",
+    request: "",
     durationMinutes: DEFAULT_DURATION,
     status: DEFAULT_STATUS,
     clientId: null,
     attached: false,
     updatedAt: null,
+    photos: { prima: null, dopo: null },
   };
 }
 
@@ -50,11 +55,13 @@ function sheetFromVisit(visit: DayVisit): Sheet {
     name: visit.clientName,
     phone: visit.phone,
     service: visit.service,
+    request: visit.request,
     durationMinutes: visit.durationMinutes,
     status: visit.status,
     clientId: visit.clientId,
     attached: Boolean(visit.clientId),
     updatedAt: visit.updatedAt,
+    photos: visit.photos,
   };
 }
 
@@ -69,6 +76,7 @@ export function DayBoard({
   const [day, setDay] = useState(initialDay);
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clash, setClash] = useState<Clash | null>(null);
   const [results, setResults] = useState<ClientHit[]>([]);
@@ -164,6 +172,7 @@ export function DayBoard({
       }
       setError(null);
       setClash(null);
+      setSaved(false);
       setSheet(blankSheet(stylistId, body.start));
     } catch {
       setNotice(copy.offline);
@@ -205,6 +214,7 @@ export function DayBoard({
           name: sheet.name,
           phone: sheet.phone,
           service: sheet.service,
+          request: sheet.request,
           clientId: sheet.attached ? sheet.clientId : null,
           updatedAt: sheet.updatedAt,
         }),
@@ -225,7 +235,9 @@ export function DayBoard({
         await reloadDay();
         return;
       }
-      setSheet(null);
+      if (body.visit) setSheet(sheetFromVisit(body.visit));
+      setSaved(true);
+      setNotice(null);
       setClash(null);
       await reloadDay();
     } catch {
@@ -272,11 +284,15 @@ export function DayBoard({
               onEmpty={(start) => {
                 setError(null);
                 setClash(null);
+                setSaved(false);
+                setNotice(null);
                 setSheet(blankSheet(stylist.id, start));
               }}
               onVisit={(visit) => {
                 setError(null);
                 setClash(null);
+                setSaved(false);
+                setNotice(null);
                 setSheet(sheetFromVisit(visit));
               }}
             />
@@ -289,6 +305,7 @@ export function DayBoard({
           stylists={day.stylists.map((stylist) => ({ id: stylist.id, name: stylist.name }))}
           results={results}
           error={error}
+          notice={saved ? copy.saved : null}
           clash={clash}
           pending={pending}
           onChange={(next) => {
@@ -302,6 +319,8 @@ export function DayBoard({
           }}
           onClose={() => {
             setSheet(null);
+            setNotice(null);
+            setSaved(false);
             setError(null);
             setClash(null);
           }}
@@ -438,6 +457,7 @@ function AppointmentSheet({
   stylists,
   results,
   error,
+  notice,
   clash,
   pending,
   onChange,
@@ -450,6 +470,7 @@ function AppointmentSheet({
   stylists: { id: string; name: string }[];
   results: ClientHit[];
   error: string | null;
+  notice: string | null;
   clash: Clash | null;
   pending: boolean;
   onChange: (sheet: Sheet) => void;
@@ -533,6 +554,21 @@ function AppointmentSheet({
             className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
           />
         </label>
+        <label className="mb-3 block">
+          <span className="text-sm font-medium">{copy.request}</span>
+          <textarea
+            value={sheet.request}
+            onChange={(event) => onChange({ ...sheet, request: event.target.value })}
+            rows={3}
+            className="mt-1 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 py-2 text-lg"
+          />
+        </label>
+        <ClientLikes clientId={sheet.attached ? sheet.clientId : null} />
+        <VisitPhotosFields
+          visitId={sheet.id}
+          photos={sheet.photos}
+          onPhotos={(photos) => onChange({ ...sheet, photos })}
+        />
         <div className="mb-3 grid grid-cols-2 gap-2">
           <label className="block">
             <span className="text-sm font-medium">Poltrona</span>
@@ -589,6 +625,7 @@ function AppointmentSheet({
             </button>
           ))}
         </div>
+        {notice ? <p className="mb-3 text-sm text-[#2f4a3c]">{notice}</p> : null}
         {error ? (
           <p className="mb-3 rounded-xl bg-[#f8e4df] px-3 py-3 text-[#9c3b2e]" role="alert">
             {error}
@@ -607,6 +644,42 @@ function AppointmentSheet({
           {copy.save}
         </button>
       </form>
+    </div>
+  );
+}
+
+function ClientLikes({ clientId }: { clientId: string | null }) {
+  const [likes, setLikes] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!clientId) {
+      setLikes([]);
+      return;
+    }
+    let stop = false;
+    void fetch(`/api/clienti/${clientId}`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const body = (await response.json()) as { likes?: string[] };
+        if (!stop) setLikes(body.likes ?? []);
+      })
+      .catch(() => {
+        if (!stop) setLikes([]);
+      });
+    return () => {
+      stop = true;
+    };
+  }, [clientId]);
+
+  if (!clientId || likes.length === 0) return null;
+  return (
+    <div className="mb-3 rounded-xl bg-[#f3efe6] px-3 py-3">
+      <p className="text-sm font-medium">{copy.likes}</p>
+      <ul className="mt-1 list-disc pl-5">
+        {likes.map((line, index) => (
+          <li key={`${line}-${index}`}>{line}</li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     name: typeof body.name === "string" ? body.name : "",
     phone: typeof body.phone === "string" ? body.phone : "",
     service: typeof body.service === "string" ? body.service : "",
+    request: typeof body.request === "string" ? body.request : "",
     clientId: typeof body.clientId === "string" ? body.clientId : null,
     updatedAt: typeof body.updatedAt === "string" ? body.updatedAt : null,
   });

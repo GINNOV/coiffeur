@@ -1,6 +1,6 @@
 import "server-only";
 import { addDays, dayBounds, dayHeading, isClosed, timeInRome } from "@/lib/calendar";
-import type { DayPayload, DayVisit } from "@/lib/types";
+import type { DayPayload, DayVisit, VisitPhotos } from "@/lib/types";
 import { getPrisma } from "@/server/prisma";
 
 export async function loadDay(salonId: string, dateKey: string): Promise<DayPayload> {
@@ -12,7 +12,7 @@ export async function loadDay(salonId: string, dateKey: string): Promise<DayPayl
   const { start, end } = dayBounds(dateKey);
   const rows = await prisma.appointment.findMany({
     where: { salonId, startsAt: { gte: start, lt: end } },
-    include: { client: true },
+    include: { client: true, photos: { select: { id: true, kind: true } } },
     orderBy: { startsAt: "asc" },
   });
   const visitsByStylist = new Map<string, DayVisit[]>();
@@ -36,6 +36,13 @@ export async function loadDay(salonId: string, dateKey: string): Promise<DayPayl
   };
 }
 
+export function photoSlots(photos: { id: string; kind: string }[] | undefined): VisitPhotos {
+  return {
+    prima: photos?.find((photo) => photo.kind === "prima")?.id ?? null,
+    dopo: photos?.find((photo) => photo.kind === "dopo")?.id ?? null,
+  };
+}
+
 export function toVisit(row: {
   id: string;
   stylistId: string;
@@ -43,9 +50,11 @@ export function toVisit(row: {
   startsAt: Date;
   durationMinutes: number;
   service: string;
+  request?: string;
   status: string;
   updatedAt: Date;
   client: { name: string; phone: string } | null;
+  photos?: { id: string; kind: string }[];
 }): DayVisit {
   return {
     id: row.id,
@@ -54,9 +63,11 @@ export function toVisit(row: {
     clientName: row.client?.name ?? "",
     phone: row.client?.phone ?? "",
     service: row.service,
+    request: row.request ?? "",
     status: row.status,
     start: timeInRome(row.startsAt),
     durationMinutes: row.durationMinutes,
     updatedAt: row.updatedAt.toISOString(),
+    photos: photoSlots(row.photos),
   };
 }

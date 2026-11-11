@@ -19,6 +19,7 @@ type SaveInput = {
   name: string;
   phone: string;
   service: string;
+  request?: string;
   clientId?: string | null;
   updatedAt?: string | null;
 };
@@ -82,7 +83,7 @@ export async function saveAppointment(salonId: string, input: SaveInput): Promis
         if (decision.code === "stale" && input.id) {
           const fresh = await tx.appointment.findFirst({
             where: { id: input.id, salonId },
-            include: { client: true },
+            include: { client: true, photos: { select: { id: true, kind: true } } },
           });
           return { kind: "stale" as const, visit: fresh ? toVisit(fresh) : null };
         }
@@ -167,6 +168,7 @@ export async function saveAppointment(salonId: string, input: SaveInput): Promis
         startsAt,
         durationMinutes: decision.durationMinutes,
         service: input.service.trim(),
+        request: (input.request ?? "").trim(),
         status: decision.status,
       };
 
@@ -182,20 +184,20 @@ export async function saveAppointment(salonId: string, input: SaveInput): Promis
         if (updated.count !== 1) {
           const fresh = await tx.appointment.findFirst({
             where: { id: input.id, salonId },
-            include: { client: true },
+            include: { client: true, photos: { select: { id: true, kind: true } } },
           });
           return { kind: "stale" as const, visit: fresh ? toVisit(fresh) : null };
         }
         const row = await tx.appointment.findFirstOrThrow({
           where: { id: input.id },
-          include: { client: true },
+          include: { client: true, photos: { select: { id: true, kind: true } } },
         });
         return { kind: "ok" as const, visit: toVisit(row) };
       }
 
       const row = await tx.appointment.create({
         data: { salonId, ...data },
-        include: { client: true },
+        include: { client: true, photos: { select: { id: true, kind: true } } },
       });
       return { kind: "ok" as const, visit: toVisit(row) };
     });

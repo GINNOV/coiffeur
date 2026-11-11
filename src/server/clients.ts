@@ -1,8 +1,11 @@
 import "server-only";
 import { dateKeyInRome, formatVisitWhen } from "@/lib/calendar";
+import { normalizeLikes } from "@/lib/client-file";
 import { copy, statusLabel } from "@/lib/copy";
 import { phoneDigits, updateClientPhone } from "@/lib/clients";
+import { messageForCode } from "@/lib/messages";
 import type { ClientDetail, ClientHit } from "@/lib/types";
+import { photoSlots } from "@/server/day";
 import { getPrisma } from "@/server/prisma";
 import { isUniqueError } from "@/server/appointments";
 
@@ -44,7 +47,7 @@ export async function loadClient(salonId: string, id: string): Promise<ClientDet
     include: {
       appointments: {
         orderBy: { startsAt: "desc" },
-        include: { stylist: true },
+        include: { stylist: true, photos: { select: { id: true, kind: true } } },
       },
     },
   });
@@ -54,13 +57,16 @@ export async function loadClient(salonId: string, id: string): Promise<ClientDet
     name: row.name,
     phone: row.phone,
     note: row.note,
+    likes: row.likes,
     visits: row.appointments.map((visit) => ({
       id: visit.id,
       when: formatVisitWhen(visit.startsAt),
       dateKey: dateKeyInRome(visit.startsAt),
       stylistName: visit.stylist.name,
       service: visit.service,
+      request: visit.request,
       status: statusLabel(visit.status),
+      photos: photoSlots(visit.photos),
     })),
   };
 }
@@ -68,10 +74,12 @@ export async function loadClient(salonId: string, id: string): Promise<ClientDet
 export async function saveClientCard(
   salonId: string,
   id: string,
-  input: { name: string; phone: string; note: string },
+  input: { name: string; phone: string; note: string; likes: string[] },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const name = input.name.trim();
   if (!name) return { ok: false, error: copy.writeName };
+  const likes = normalizeLikes(input.likes);
+  if (!likes.ok) return { ok: false, error: messageForCode(likes.code) };
   const prisma = getPrisma();
   const cards = await prisma.client.findMany({
     where: { salonId },
@@ -88,6 +96,7 @@ export async function saveClientCard(
         phone: phone.phone,
         phoneDigits: phone.phoneDigits,
         note: input.note,
+        likes: likes.likes,
       },
     });
   } catch (error) {

@@ -236,8 +236,8 @@ export function DayBoard({
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl px-2 pb-8">
-      <header className="sticky top-0 z-30 flex items-center gap-2 bg-[#f3efe6]/95 py-3 backdrop-blur">
+    <main className="mx-auto max-w-3xl px-2 pb-8">
+      <header className="sticky top-14 z-20 flex items-center gap-2 bg-[#f3efe6]/95 py-3 backdrop-blur">
         <Link
           href={`/giorno?d=${day.prev}`}
           className="grid h-12 w-12 place-items-center rounded-full bg-[#fffaf3] text-2xl"
@@ -252,9 +252,6 @@ export function DayBoard({
           aria-label="Giorno successivo"
         >
           ›
-        </Link>
-        <Link href="/impostazioni" className="rounded-full bg-[#243246] px-3 py-3 text-sm text-white">
-          {copy.settings}
         </Link>
       </header>
       {notice ? (

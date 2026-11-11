@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f3efe6;
+  --foreground: #1e1a16;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Avenir Next", "Segoe UI", sans-serif;
+  --font-serif: "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+@keyframes booth-pop {
+  from {
+    transform: scale(1.45);
+    opacity: 0.15;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.booth-pop {
+  animation: booth-pop 700ms ease-out;
+}
+
+.booth-frame {
+  box-shadow: 0 0 0 200vmax rgba(20, 17, 14, 0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booth-pop {
+    animation: none;
+  }
+}

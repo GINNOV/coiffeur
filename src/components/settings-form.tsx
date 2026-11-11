@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { copy } from "@/lib/copy";
 
@@ -62,11 +61,8 @@ export function SettingsForm({
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
-      <Link href="/giorno" className="inline-flex min-h-12 items-center">
-        {copy.backToDay}
-      </Link>
-      <h1 className="mt-2 mb-4 font-serif text-3xl">{copy.settings}</h1>
+    <main className="mx-auto max-w-lg px-4 py-4">
+      <h1 className="mb-4 font-serif text-3xl">{copy.settings}</h1>
       <form onSubmit={saveNames} className="mb-6 rounded-3xl bg-[#fffaf3] p-4">
         {names.map((entry, index) => (
           <label key={entry.id} className="mb-3 block">

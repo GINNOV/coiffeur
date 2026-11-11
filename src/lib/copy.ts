@@ -34,6 +34,9 @@ export const copy = {
   pinNew: "PIN nuovo",
   pinConfirm: "Ripeti il PIN",
   backToDay: "Agenda",
+  salonBook: "Il libro del salone",
+  mainNav: "Principale",
+  footerNav: "Piè di pagina",
 } as const;
 
 export type StatusCode = keyof typeof copy.status;

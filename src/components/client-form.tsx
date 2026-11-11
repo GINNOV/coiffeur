@@ -40,7 +40,7 @@ export function ClientForm({ client }: { client: ClientDetail }) {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
+    <main className="mx-auto max-w-lg px-4 py-4">
       <Link href="/giorno" className="inline-flex min-h-12 items-center text-[#243246]">
         {copy.backToDay}
       </Link>

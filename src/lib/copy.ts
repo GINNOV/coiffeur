@@ -37,6 +37,15 @@ export const copy = {
   salonBook: "Il libro del salone",
   mainNav: "Principale",
   footerNav: "Piè di pagina",
+  reference: "Riferimento",
+  shoot: "Scatta",
+  shootStart: "Via",
+  frameHint: "Metti il viso nella cornice",
+  cameraBlocked: "La fotocamera non si apre",
+  needFour: "Servono quattro foto",
+  photoFailed: "Le foto non sono state salvate",
+  noPhotos: "Nessuna foto di riferimento",
+  photoOf: "Foto di riferimento",
 } as const;
 
 export type StatusCode = keyof typeof copy.status;

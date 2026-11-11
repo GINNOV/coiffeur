@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ReferencePhotos } from "@/components/reference-photos";
 import { copy } from "@/lib/copy";
-import type { ClientDetail } from "@/lib/types";
+import type { ClientDetail, ReferenceStrip } from "@/lib/types";
 import { redirectIfUnauthorized } from "@/lib/unauthorized";
 
-export function ClientForm({ client }: { client: ClientDetail }) {
+export function ClientForm({ client, strips }: { client: ClientDetail; strips: ReferenceStrip[] }) {
   const router = useRouter();
   const [name, setName] = useState(client.name);
   const [phone, setPhone] = useState(client.phone);
@@ -81,6 +82,7 @@ export function ClientForm({ client }: { client: ClientDetail }) {
           {copy.save}
         </button>
       </form>
+      <ReferencePhotos clientId={client.id} strips={strips} />
       <h2 className="mt-8 mb-2 font-serif text-2xl">{copy.visits}</h2>
       <ul className="space-y-2">
         {client.visits.map((visit) => (

@@ -21,3 +21,28 @@ body {
 .font-serif {
   font-family: var(--font-serif);
 }
+
+@keyframes booth-pop {
+  from {
+    transform: scale(1.45);
+    opacity: 0.15;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.booth-pop {
+  animation: booth-pop 700ms ease-out;
+}
+
+.booth-frame {
+  box-shadow: 0 0 0 200vmax rgba(20, 17, 14, 0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booth-pop {
+    animation: none;
+  }
+}

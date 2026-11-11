@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ClientForm } from "@/components/client-form";
+import { listReferenceStrips } from "@/lib/photo-store";
 import { requireSalon } from "@/server/auth";
 import { loadClient } from "@/server/clients";
 
@@ -10,5 +11,6 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const client = await loadClient(salon.id, id);
   if (!client) notFound();
-  return <ClientForm client={client} />;
+  const strips = await listReferenceStrips(client.id);
+  return <ClientForm client={client} strips={strips} />;
 }

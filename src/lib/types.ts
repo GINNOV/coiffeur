@@ -51,6 +51,11 @@ export type ClientDetail = {
   visits: ClientVisitRow[];
 };
 
+export type ReferenceStrip = {
+  id: string;
+  shots: string[];
+};
+
 export type Clash = {
   id: string;
   name: string;

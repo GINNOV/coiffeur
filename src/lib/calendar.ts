@@ -32,9 +32,16 @@ export function isLegalStart(hhmm: string): boolean {
   return LEGAL_STARTS.has(hhmm);
 }
 
-export function isClosed(dateKey: string): boolean {
-  const weekday = weekdayIndex(dateKey);
-  return weekday === 0 || weekday === 1;
+export type ClosureRules = {
+  weekdays: readonly number[];
+  dates: readonly string[];
+};
+
+export const DEFAULT_CLOSURES: ClosureRules = { weekdays: [0, 1], dates: [] };
+
+export function isClosed(dateKey: string, rules: ClosureRules = DEFAULT_CLOSURES): boolean {
+  if (rules.dates.includes(dateKey)) return true;
+  return rules.weekdays.includes(weekdayIndex(dateKey));
 }
 
 export function todayKey(now = new Date()): string {
@@ -79,9 +86,10 @@ export function addDays(dateKey: string, days: number): string {
 
 export function walkInStart(
   now: Date,
+  rules: ClosureRules = DEFAULT_CLOSURES,
 ): { ok: true; dateKey: string; start: string } | { ok: false; code: "closed" } {
   const dateKey = dateKeyInRome(now);
-  if (isClosed(dateKey)) return { ok: false, code: "closed" };
+  if (isClosed(dateKey, rules)) return { ok: false, code: "closed" };
   const parts = romeParts(now);
   const minutes = Number(parts.hour) * 60 + Number(parts.minute);
   if (minutes < OPEN_MINUTES || minutes > LAST_START_MINUTES) {

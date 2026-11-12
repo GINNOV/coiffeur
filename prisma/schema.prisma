@@ -9,12 +9,46 @@ datasource db {
 }
 
 model Salon {
-  id           String        @id @default(cuid())
-  pinHash      String
-  pinVersion   Int           @default(1)
-  stylists     Stylist[]
-  clients      Client[]
-  appointments Appointment[]
+  id             String            @id @default(cuid())
+  pinHash        String
+  pinVersion     Int               @default(1)
+  closedWeekdays Int[]             @default([0, 1])
+  closedDates    String[]          @default([])
+  stylists       Stylist[]
+  clients        Client[]
+  appointments   Appointment[]
+  services       Service[]
+  templates      MessageTemplate[]
+  kapso          KapsoSetting?
+}
+
+model Service {
+  id              String @id @default(cuid())
+  salonId         String
+  salon           Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  name            String
+  durationMinutes Int
+  position        Int
+
+  @@index([salonId])
+}
+
+model MessageTemplate {
+  id      String @id @default(cuid())
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  key     String
+  body    String
+
+  @@unique([salonId, key])
+}
+
+model KapsoSetting {
+  salonId            String @id
+  salon              Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  apiKey             String @default("")
+  phoneNumberId      String @default("")
+  displayPhoneNumber String @default("")
 }
 
 model Stylist {

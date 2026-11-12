@@ -25,6 +25,13 @@ describe("calendar", () => {
     expect(isClosed("2026-11-14")).toBe(false);
   });
 
+  it("uses the salon's closed weekdays and extra dates", () => {
+    const rules = { weekdays: [0], dates: ["2026-11-10"] };
+    expect(isClosed("2026-11-09", rules)).toBe(false);
+    expect(isClosed("2026-11-08", rules)).toBe(true);
+    expect(isClosed("2026-11-10", rules)).toBe(true);
+  });
+
   it("converts Rome civil times to explicit UTC instants", () => {
     expect(zonedTimeToUtc("2026-11-10", "09:00").toISOString()).toBe("2026-11-10T08:00:00.000Z");
     expect(zonedTimeToUtc("2026-11-10", "18:45").toISOString()).toBe("2026-11-10T17:45:00.000Z");

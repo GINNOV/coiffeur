@@ -1,4 +1,4 @@
-import { isClosed, isLegalStart, parseMinutes } from "@/lib/calendar";
+import { isClosed, isLegalStart, parseMinutes, type ClosureRules } from "@/lib/calendar";
 
 export const DURATIONS = [30, 45, 60, 90, 120] as const;
 export const DEFAULT_DURATION = 30;
@@ -57,7 +57,11 @@ export function rangesOverlap(
   return startA < startB + durationB && startB < startA + durationA;
 }
 
-export function evaluateBooking(draft: VisitDraft, existing: OccupyingVisit[]): BookingResult {
+export function evaluateBooking(
+  draft: VisitDraft,
+  existing: OccupyingVisit[],
+  rules?: ClosureRules,
+): BookingResult {
   if (draft.id) {
     if ((draft.updatedAt ?? null) !== (draft.storedUpdatedAt ?? null)) {
       return { ok: false, code: "stale" };
@@ -68,7 +72,7 @@ export function evaluateBooking(draft: VisitDraft, existing: OccupyingVisit[]): 
   const service = draft.service.trim();
   if (!name && !service) return { ok: false, code: "empty" };
 
-  if (isClosed(draft.dateKey) || !isLegalStart(draft.start)) {
+  if (isClosed(draft.dateKey, rules) || !isLegalStart(draft.start)) {
     return { ok: false, code: "closed" };
   }
 

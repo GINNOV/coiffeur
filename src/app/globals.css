@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3efe6;
-  --foreground: #1e1a16;
+  --paper: #e7eee9;
+  --sheet: #f5faf6;
+  --ink: #15211c;
+  --rule: #c5d0c9;
+  --quiet: #5c6b64;
+  --alert: #8d2f24;
+  --chair-a: #1b4636;
+  --chair-b: #7c3142;
+  --done-a: #d5e4dc;
+  --done-b: #f3dbe0;
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
 @theme inline {
@@ -13,13 +23,68 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-sans);
 }
 
 .font-serif {
   font-family: var(--font-serif);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.line {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  padding: 0.7rem 0;
+  font-size: 1.125rem;
+  color: var(--ink);
+}
+
+.line-name {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0 0.4rem;
+  font-family: var(--font-serif);
+  font-size: 2.25rem;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.line-name::placeholder,
+.line::placeholder {
+  color: var(--rule);
+}
+
+.choice {
+  min-height: 2.75rem;
+  border-bottom: 2px solid transparent;
+  padding: 0 0.35rem;
+  color: var(--quiet);
+}
+
+.choice-on {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+.save {
+  min-height: 3.5rem;
+  width: 100%;
+  background: var(--ink);
+  color: var(--sheet);
+  font-size: 1.125rem;
+}
+
+.save:disabled {
+  opacity: 0.5;
 }
 
 @keyframes booth-pop {
@@ -38,7 +103,7 @@ body {
 }
 
 .booth-frame {
-  box-shadow: 0 0 0 200vmax rgba(20, 17, 14, 0.62);
+  box-shadow: 0 0 0 200vmax rgba(14, 20, 17, 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {

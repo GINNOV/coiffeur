@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { frameSourceRect, isPhotoId, shotIndex } from "@/lib/photo-booth";
+import { frameSourceRect, isPhotoId, isReferenceStripList, shotIndex } from "@/lib/photo-booth";
 
 describe("photo ids", () => {
   it("accepts a client id and rejects a path", () => {
@@ -10,6 +10,12 @@ describe("photo ids", () => {
     expect(isPhotoId("")).toBe(false);
     expect(isPhotoId(".")).toBe(false);
     expect(isPhotoId("..")).toBe(false);
+  });
+
+  it("accepts a strip list and rejects a loose object", () => {
+    expect(isReferenceStripList([{ id: "a", shots: ["/a/1"] }])).toBe(true);
+    expect(isReferenceStripList([{ id: "a", shots: [1] }])).toBe(false);
+    expect(isReferenceStripList({ strips: [] })).toBe(false);
   });
 
   it("reads only shot numbers 1 to 4", () => {

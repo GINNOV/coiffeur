@@ -61,7 +61,7 @@ export function VisitPhotosFields({
   }
 
   if (!visitId) {
-    return <p className="mb-3 text-sm text-[#5c5348]">{copy.saveForPhotos}</p>;
+    return <p className="mb-3 text-sm text-[var(--quiet)]">{copy.saveForPhotos}</p>;
   }
 
   return (
@@ -83,7 +83,7 @@ export function VisitPhotosFields({
         />
       </div>
       {error ? (
-        <p className="mt-2 text-[#9c3b2e]" role="alert">
+        <p className="mt-2 text-[var(--alert)]" role="alert">
           {error}
         </p>
       ) : null}
@@ -105,19 +105,18 @@ function PhotoSlot({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-2xl bg-[#f3efe6] p-2">
-      <span className="text-sm font-medium">{label}</span>
-      {photoId ? (
-        // The photo route is same-origin and checks the PIN cookie. next/image would need a remote config.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/api/foto/${photoId}`} alt={label} className="mt-2 aspect-[3/4] w-full rounded-xl object-cover" />
-      ) : (
-        <div className="mt-2 grid aspect-[3/4] place-items-center rounded-xl border border-dashed border-[#c8bba8] text-sm text-[#8a7d6d]">
-          {label}
-        </div>
-      )}
-      <label className="mt-2 block">
-        <span className="sr-only">{label}</span>
+    <div>
+      <label className="block">
+        <span className="text-sm text-[var(--quiet)]">{label}</span>
+        {photoId ? (
+          // The photo route is same-origin and checks the PIN cookie. next/image would need a remote config.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={`/api/foto/${photoId}`} alt={label} className="mt-1 aspect-[3/4] w-full object-cover" />
+        ) : (
+          <span className="mt-1 grid aspect-[3/4] place-items-center border border-dashed border-[var(--rule)] text-sm text-[var(--quiet)]">
+            {label}
+          </span>
+        )}
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
@@ -127,11 +126,11 @@ function PhotoSlot({
             event.target.value = "";
             onFile(file);
           }}
-          className="block w-full text-sm"
+          className="sr-only"
         />
       </label>
       {photoId ? (
-        <button type="button" onClick={onRemove} disabled={pending} className="mt-2 min-h-10 text-sm text-[#9c3b2e]">
+        <button type="button" onClick={onRemove} disabled={pending} className="mt-1 min-h-10 text-sm text-[var(--alert)]">
           {copy.remove}
         </button>
       ) : null}

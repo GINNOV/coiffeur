@@ -1,17 +1,30 @@
 import { copy } from "@/lib/copy";
 import { SHOT_COUNT } from "@/lib/photo-booth";
-import { isJpeg, saveStrip } from "@/lib/photo-store";
+import { isJpeg, listReferenceStrips, saveStrip } from "@/lib/photo-store";
 import { requireApiSalon } from "@/server/auth";
 import { getPrisma } from "@/server/prisma";
+
+async function clientInSalon(salonId: string, id: string) {
+  return getPrisma().client.findFirst({
+    where: { id, salonId },
+    select: { id: true },
+  });
+}
+
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+  const auth = await requireApiSalon();
+  if ("response" in auth) return auth.response;
+  const { id } = await context.params;
+  const client = await clientInSalon(auth.salon.id, id);
+  if (!client) return Response.json({ error: copy.photoFailed }, { status: 404 });
+  return Response.json({ strips: await listReferenceStrips(id) });
+}
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const auth = await requireApiSalon();
   if ("response" in auth) return auth.response;
   const { id } = await context.params;
-  const client = await getPrisma().client.findFirst({
-    where: { id, salonId: auth.salon.id },
-    select: { id: true },
-  });
+  const client = await clientInSalon(auth.salon.id, id);
   if (!client) return Response.json({ error: copy.photoFailed }, { status: 404 });
 
   let form: FormData;

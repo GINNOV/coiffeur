@@ -1,24 +1,41 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { copy } from "@/lib/copy";
 
-export function SettingsForm({
+function SettingsPage({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <main className="mx-auto max-w-lg px-5 py-6">
+      <Link
+        href="/impostazioni"
+        className="text-sm text-[var(--quiet)] underline decoration-[var(--rule)] underline-offset-4"
+      >
+        {copy.settings}
+      </Link>
+      <h1 className="mt-3 mb-6 font-serif text-4xl">{title}</h1>
+      {children}
+    </main>
+  );
+}
+
+function errorMessage(body: unknown): string | null {
+  if (!body || typeof body !== "object" || !("error" in body)) return null;
+  return typeof body.error === "string" ? body.error : null;
+}
+
+export function ColumnNamesForm({
   stylists,
 }: {
   stylists: { id: string; name: string; position: number }[];
 }) {
   const [names, setNames] = useState(stylists.map((stylist) => ({ id: stylist.id, name: stylist.name })));
-  const [currentPin, setCurrentPin] = useState("");
-  const [nextPin, setNextPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [pending, setPending] = useState<"names" | "pin" | null>(null);
+  const [pending, setPending] = useState(false);
 
   async function saveNames(event: React.FormEvent) {
     event.preventDefault();
-    setPending("names");
+    setPending(true);
     setNameError(null);
     try {
       const response = await fetch("/api/impostazioni", {
@@ -26,47 +43,21 @@ export function SettingsForm({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind: "names", names }),
       });
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) setNameError(body.error ?? copy.offline);
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) setNameError(errorMessage(body) ?? copy.offline);
     } catch {
       setNameError(copy.offline);
     } finally {
-      setPending(null);
-    }
-  }
-
-  async function savePin(event: React.FormEvent) {
-    event.preventDefault();
-    setPending("pin");
-    setPinError(null);
-    try {
-      const response = await fetch("/api/impostazioni", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ kind: "pin", currentPin, nextPin, confirmPin }),
-      });
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) {
-        setPinError(body.error ?? copy.offline);
-        return;
-      }
-      setCurrentPin("");
-      setNextPin("");
-      setConfirmPin("");
-    } catch {
-      setPinError(copy.offline);
-    } finally {
-      setPending(null);
+      setPending(false);
     }
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-4">
-      <h1 className="mb-4 font-serif text-3xl">{copy.settings}</h1>
-      <form onSubmit={saveNames} className="mb-6 rounded-3xl bg-[#fffaf3] p-4">
+    <SettingsPage title={copy.chairs}>
+      <form onSubmit={saveNames}>
         {names.map((entry, index) => (
           <label key={entry.id} className="mb-3 block">
-            <span className="text-sm font-medium">{index + 1}</span>
+            <span className="text-sm text-[var(--quiet)]">{index + 1}</span>
             <input
               value={entry.name}
               maxLength={40}
@@ -75,33 +66,71 @@ export function SettingsForm({
                   current.map((item) => (item.id === entry.id ? { ...item, name: event.target.value } : item)),
                 )
               }
-              className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
+              className="line"
             />
           </label>
         ))}
         {nameError ? (
-          <p className="mb-3 text-[#9c3b2e]" role="alert">
+          <p className="mb-3 text-[var(--alert)]" role="alert">
             {nameError}
           </p>
         ) : null}
-        <button type="submit" disabled={pending === "names"} className="min-h-14 w-full rounded-2xl bg-[#1e1a16] text-lg text-white">
+        <button type="submit" disabled={pending} className="save mt-4">
           {copy.save}
         </button>
       </form>
-      <form onSubmit={savePin} className="rounded-3xl bg-[#fffaf3] p-4">
+    </SettingsPage>
+  );
+}
+
+export function PinForm() {
+  const [currentPin, setCurrentPin] = useState("");
+  const [nextPin, setNextPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function savePin(event: React.FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setPinError(null);
+    try {
+      const response = await fetch("/api/impostazioni", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind: "pin", currentPin, nextPin, confirmPin }),
+      });
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        setPinError(errorMessage(body) ?? copy.offline);
+        return;
+      }
+      setCurrentPin("");
+      setNextPin("");
+      setConfirmPin("");
+    } catch {
+      setPinError(copy.offline);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <SettingsPage title={copy.pinTitle}>
+      <form onSubmit={savePin}>
         <PinField label={copy.pinCurrent} value={currentPin} onChange={setCurrentPin} />
         <PinField label={copy.pinNew} value={nextPin} onChange={setNextPin} />
         <PinField label={copy.pinConfirm} value={confirmPin} onChange={setConfirmPin} />
         {pinError ? (
-          <p className="mb-3 text-[#9c3b2e]" role="alert">
+          <p className="mb-3 text-[var(--alert)]" role="alert">
             {pinError}
           </p>
         ) : null}
-        <button type="submit" disabled={pending === "pin"} className="min-h-14 w-full rounded-2xl bg-[#9c3b2e] text-lg text-white">
+        <button type="submit" disabled={pending} className="save mt-4">
           {copy.save}
         </button>
       </form>
-    </main>
+    </SettingsPage>
   );
 }
 
@@ -116,14 +145,15 @@ function PinField({
 }) {
   return (
     <label className="mb-3 block">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="sr-only">{label}</span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 4))}
         inputMode="numeric"
         autoComplete="off"
         maxLength={4}
-        className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg tracking-[0.4em]"
+        placeholder={label}
+        className="line tracking-[0.4em]"
       />
     </label>
   );

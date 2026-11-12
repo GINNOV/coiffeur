@@ -1,10 +1,13 @@
 import "server-only";
 import { addDays, dayBounds, dayHeading, isClosed, timeInRome } from "@/lib/calendar";
 import type { DayPayload, DayVisit, VisitPhotos } from "@/lib/types";
+import { closureRules } from "@/server/catalog";
 import { getPrisma } from "@/server/prisma";
 
 export async function loadDay(salonId: string, dateKey: string): Promise<DayPayload> {
   const prisma = getPrisma();
+  const salon = await prisma.salon.findFirst({ where: { id: salonId } });
+  const rules = salon ? closureRules(salon) : undefined;
   const stylists = await prisma.stylist.findMany({
     where: { salonId },
     orderBy: { position: "asc" },
@@ -24,7 +27,7 @@ export async function loadDay(salonId: string, dateKey: string): Promise<DayPayl
   return {
     dateKey,
     heading: dayHeading(dateKey),
-    closed: isClosed(dateKey),
+    closed: isClosed(dateKey, rules),
     prev: addDays(dateKey, -1),
     next: addDays(dateKey, 1),
     stylists: stylists.map((stylist) => ({

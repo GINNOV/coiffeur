@@ -1,4 +1,16 @@
+import type { ReferenceStrip } from "@/lib/types";
+
 export const SHOT_COUNT = 4;
+
+export function isReferenceStripList(value: unknown): value is ReferenceStrip[] {
+  if (!Array.isArray(value)) return false;
+  return value.every((item) => {
+    if (typeof item !== "object" || item === null) return false;
+    if (!("id" in item) || typeof item.id !== "string") return false;
+    if (!("shots" in item) || !Array.isArray(item.shots)) return false;
+    return item.shots.every((shot: unknown) => typeof shot === "string");
+  });
+}
 
 const PHOTO_ID = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,78}[a-zA-Z0-9])?$/;
 

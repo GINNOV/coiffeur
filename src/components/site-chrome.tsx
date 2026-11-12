@@ -5,11 +5,6 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { copy } from "@/lib/copy";
 
-const links = [
-  { href: "/giorno", label: copy.backToDay },
-  { href: "/impostazioni", label: copy.settings },
-] as const;
-
 function currentHref(path: string): string | null {
   if (path === "/giorno") return "/giorno";
   if (path.startsWith("/impostazioni")) return "/impostazioni";
@@ -21,15 +16,25 @@ export function SiteChrome({ children }: { children: ReactNode }) {
   if (path === "/accesso") return children;
 
   const current = currentHref(path);
+  const admin = path.startsWith("/impostazioni");
 
   return (
     <>
-      <header className="sticky top-0 z-30 h-14 border-b border-[#e2d8c8] bg-[#f3efe6]/95 backdrop-blur">
-        <nav aria-label={copy.mainNav} className="mx-auto flex h-full max-w-3xl items-center justify-between gap-3 px-3">
+      <header
+        className={
+          admin
+            ? "sticky top-0 z-30 h-14 bg-[#1E3A5F] text-white shadow-md"
+            : "sticky top-0 z-30 h-14 border-b border-[var(--rule)] bg-[var(--paper)]"
+        }
+      >
+        <nav
+          aria-label={copy.mainNav}
+          className={`mx-auto flex h-full items-center justify-between px-4 ${admin ? "max-w-6xl" : "max-w-3xl"}`}
+        >
           <Link
             href="/giorno"
             aria-current={current === "/giorno" ? "page" : undefined}
-            className="font-serif text-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243246]"
+            className={admin ? "font-serif text-lg tracking-tight" : "font-serif text-2xl"}
           >
             {copy.backToDay}
           </Link>
@@ -37,39 +42,18 @@ export function SiteChrome({ children }: { children: ReactNode }) {
             href="/impostazioni"
             aria-current={current === "/impostazioni" ? "page" : undefined}
             className={
-              current === "/impostazioni"
-                ? "inline-flex min-h-11 items-center rounded-full bg-[#fffaf3] px-3 text-sm text-[#1e1a16] ring-1 ring-[#1e1a16] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243246]"
-                : "inline-flex min-h-11 items-center rounded-full bg-[#243246] px-3 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#243246]"
+              admin
+                ? `pb-0.5 text-[11px] tracking-[1.5px] uppercase ${
+                    current === "/impostazioni" ? "border-b-2 border-[#C9A962] text-[#C9A962]" : "border-b-2 border-transparent"
+                  }`
+                : "inline-flex min-h-11 items-center text-sm underline decoration-[var(--rule)] underline-offset-4"
             }
           >
             {copy.settings}
           </Link>
         </nav>
       </header>
-      <div className="flex-1">{children}</div>
-      <footer className="bg-[#243246] text-[#f3efe6]">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-5 sm:flex-row sm:items-end sm:justify-between">
-          <p className="font-serif text-lg leading-tight">
-            {copy.backToDay}
-            <span className="mt-1 block font-sans text-sm text-[#f3efe6]/75">{copy.salonBook}</span>
-          </p>
-          <nav aria-label={copy.footerNav}>
-            <ul className="flex gap-4 text-sm">
-              {links.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    aria-current={link.href === current ? "page" : undefined}
-                    className="inline-flex min-h-11 items-center underline decoration-[#f3efe6]/40 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f3efe6]"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-      </footer>
+      <div className={admin ? "flex-1 bg-[#F7F5F2]" : "flex-1"}>{children}</div>
     </>
   );
 }

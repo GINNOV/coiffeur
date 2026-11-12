@@ -8,9 +8,10 @@ import { DURATIONS, DEFAULT_DURATION, DEFAULT_STATUS } from "@/lib/booking";
 import { STATUS_CODES, copy, statusLabel } from "@/lib/copy";
 import type { Clash, ClientHit, DayPayload, DayVisit, VisitPhotos } from "@/lib/types";
 import { redirectIfUnauthorized } from "@/lib/unauthorized";
+import { ReferencePhotos } from "@/components/reference-photos";
 import { VisitPhotosFields } from "@/components/visit-photos";
 
-const ROW_PX = 44;
+const ROW_PX = 36;
 const OPEN_MINUTE = 9 * 60;
 
 type Sheet = {
@@ -248,37 +249,30 @@ export function DayBoard({
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-2 pb-8">
-      <header className="sticky top-14 z-20 flex items-center gap-2 bg-[#f3efe6]/95 py-3 backdrop-blur">
-        <Link
-          href={`/giorno?d=${day.prev}`}
-          className="grid h-12 w-12 place-items-center rounded-full bg-[#fffaf3] text-2xl"
-          aria-label="Giorno precedente"
-        >
+    <main className="mx-auto max-w-lg px-3 pb-10">
+      <header className="sticky top-14 z-20 flex items-end gap-2 bg-[var(--paper)] py-3">
+        <Link href={`/giorno?d=${day.prev}`} className="grid h-12 w-10 place-items-center font-serif text-3xl" aria-label="Giorno precedente">
           ‹
         </Link>
-        <h1 className="flex-1 text-center font-serif text-lg leading-tight">{day.heading}</h1>
-        <Link
-          href={`/giorno?d=${day.next}`}
-          className="grid h-12 w-12 place-items-center rounded-full bg-[#fffaf3] text-2xl"
-          aria-label="Giorno successivo"
-        >
+        <h1 className="flex-1 text-center font-serif text-2xl leading-none">{day.heading}</h1>
+        <Link href={`/giorno?d=${day.next}`} className="grid h-12 w-10 place-items-center font-serif text-3xl" aria-label="Giorno successivo">
           ›
         </Link>
       </header>
       {notice ? (
-        <p className="mb-3 rounded-xl bg-[#9c3b2e] px-3 py-3 text-center text-white" role="alert">
+        <p className="mb-3 px-2 text-center text-[var(--alert)]" role="alert">
           {notice}
         </p>
       ) : null}
       {day.closed ? (
-        <p className="mt-16 text-center font-serif text-4xl text-[#9c3b2e]">{copy.closed}</p>
+        <p className="mt-16 text-center font-serif text-5xl">{copy.closed}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {day.stylists.map((stylist) => (
+        <div className="grid grid-cols-2 gap-3 px-1">
+          {day.stylists.map((stylist, index) => (
             <Column
               key={stylist.id}
               name={stylist.name}
+              chair={index % 2 === 0 ? "a" : "b"}
               visits={stylist.visits}
               onWalkIn={() => void walkIn(stylist.id)}
               onEmpty={(start) => {
@@ -333,12 +327,14 @@ export function DayBoard({
 
 function Column({
   name,
+  chair,
   visits,
   onWalkIn,
   onEmpty,
   onVisit,
 }: {
   name: string;
+  chair: "a" | "b";
   visits: DayVisit[];
   onWalkIn: () => void;
   onEmpty: (start: string) => void;
@@ -363,26 +359,26 @@ function Column({
   );
   const quiet = visits.filter((visit) => !blocking.includes(visit));
 
+  const ink = chair === "a" ? "var(--chair-a)" : "var(--chair-b)";
   return (
-    <section className="min-w-0 rounded-2xl bg-[#fffaf3] p-1.5 shadow-sm">
-      <h2 className="truncate px-1 pb-1 text-center text-sm font-semibold">{name}</h2>
-      <button
-        type="button"
-        onClick={onWalkIn}
-        className="mb-2 min-h-12 w-full rounded-xl bg-[#f3efe6] px-1 text-sm font-medium"
-      >
-        {copy.walkIn}
+    <section className="min-w-0">
+      <h2 className="truncate px-1 pb-1 font-serif text-lg" style={{ borderBottom: `2px solid ${ink}` }}>
+        {name}
+      </h2>
+      <button type="button" onClick={onWalkIn} className="min-h-11 w-full px-1 text-left text-sm text-[var(--quiet)]">
+        + {copy.walkIn}
       </button>
       <div className="relative" style={{ height: slots.length * ROW_PX }}>
         {slots.map((slot, index) => {
           const slotMinute = parseMinutes(slot) ?? 0;
-          const className =
-            "absolute right-0 left-0 border-t border-[#e7dccb] px-1 text-left text-[11px] text-[#8a7d6d]";
+          const hour = slot.endsWith(":00");
+          const className = `absolute right-0 left-0 border-t px-0.5 text-left text-[11px] ${hour ? "border-[var(--rule)] text-[var(--quiet)]" : "border-[var(--rule)]/40 text-transparent"}`;
           const style = { top: index * ROW_PX, height: ROW_PX };
+          const mark = hour ? slot.slice(0, 2) : "";
           if (slotMinute > LAST_START_MINUTES) {
             return (
               <div key={slot} className={className} style={style}>
-                {slot}
+                {mark}
               </div>
             );
           }
@@ -390,6 +386,7 @@ function Column({
             <button
               key={slot}
               type="button"
+              aria-label={slot}
               onClick={() => {
                 const cover = blocking.find((visit) => {
                   const start = parseMinutes(visit.start) ?? 0;
@@ -401,7 +398,7 @@ function Column({
               className={className}
               style={style}
             >
-              {slot}
+              {mark}
             </button>
           );
         })}
@@ -412,8 +409,8 @@ function Column({
               key={visit.id}
               type="button"
               onClick={() => onVisit(visit)}
-              className="absolute right-1 left-8 z-20 truncate rounded border border-dashed border-[#8a7d6d] bg-[#fffaf3]/90 px-1 text-left text-[11px] line-through"
-              style={{ top: ((start - OPEN_MINUTE) / 15) * ROW_PX + 16, height: 22 }}
+              className="absolute right-0 left-6 z-20 truncate px-1 text-left text-xs text-[var(--quiet)] line-through"
+              style={{ top: ((start - OPEN_MINUTE) / 15) * ROW_PX + 4, height: 28 }}
             >
               {labelFor(visit)}
             </button>
@@ -426,14 +423,14 @@ function Column({
               key={visit.id}
               type="button"
               onClick={() => onVisit(visit)}
-              className={`absolute right-1 left-8 z-10 overflow-hidden rounded-lg px-1 py-1 text-left text-xs leading-tight text-white ${blockTone(visit.status)}`}
+              className={`absolute right-0 left-6 z-10 overflow-hidden px-1.5 py-1 text-left leading-tight ${blockTone(visit.status, chair)}`}
               style={{
                 top: ((start - OPEN_MINUTE) / 15) * ROW_PX,
-                height: Math.max((visit.durationMinutes / 15) * ROW_PX - 2, ROW_PX - 2),
+                height: Math.max((visit.durationMinutes / 15) * ROW_PX - 3, ROW_PX - 3),
               }}
             >
-              {visit.clientName ? <span className="block truncate font-semibold">{visit.clientName}</span> : null}
-              {visit.service ? <span className="block truncate opacity-90">{visit.service}</span> : null}
+              {visit.clientName ? <span className="block truncate font-serif text-sm">{visit.clientName}</span> : null}
+              {visit.service ? <span className="block truncate text-[11px] opacity-80">{visit.service}</span> : null}
             </button>
           );
         })}
@@ -446,10 +443,10 @@ function labelFor(visit: DayVisit): string {
   return [visit.clientName, visit.service].filter(Boolean).join(" · ");
 }
 
-function blockTone(status: string): string {
-  if (status === "in_salone") return "bg-[#9c3b2e]";
-  if (status === "fatto") return "bg-[#2f4a3c]";
-  return "bg-[#243246]";
+function blockTone(status: string, chair: "a" | "b"): string {
+  if (status === "in_salone") return "bg-[#111] text-white";
+  if (status === "fatto") return chair === "a" ? "bg-[var(--done-a)] text-[var(--chair-a)]" : "bg-[var(--done-b)] text-[var(--chair-b)]";
+  return chair === "a" ? "bg-[var(--chair-a)] text-white" : "bg-[var(--chair-b)] text-white";
 }
 
 function AppointmentSheet({
@@ -481,22 +478,22 @@ function AppointmentSheet({
 }) {
   const starts = legalStarts();
   return (
-    <div className="fixed inset-0 z-40 flex items-end bg-black/40" role="presentation">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-[#15211c]/40" role="presentation">
       <form
-        className="max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl bg-[#fffaf3] px-4 pt-4 pb-6 shadow-2xl"
+        className="max-h-[92dvh] w-full max-w-lg overflow-y-auto bg-[var(--sheet)] px-5 pt-4 pb-8"
         onSubmit={(event) => {
           event.preventDefault();
           onSave();
         }}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-serif text-2xl">{sheet.start}</h2>
-          <button type="button" onClick={onClose} className="min-h-12 rounded-full px-4 text-base">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="font-serif text-3xl">{sheet.start}</h2>
+          <button type="button" onClick={onClose} className="min-h-12 px-2 text-base">
             {copy.close}
           </button>
         </div>
-        <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.nome}</span>
+        <label className="mb-2 block">
+          <span className="sr-only">{copy.nome}</span>
           <input
             value={sheet.name}
             onChange={(event) =>
@@ -507,23 +504,21 @@ function AppointmentSheet({
                 clientId: null,
               })
             }
-            className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
+            placeholder={copy.nome}
+            className="line-name"
             autoComplete="name"
           />
         </label>
+        {sheet.attached && sheet.clientId ? <ReferencePhotos clientId={sheet.clientId} /> : null}
         {results.length > 0 ? (
-          <ul className="mb-3 overflow-hidden rounded-xl border border-[#e2d8c8]">
+          <ul className="mb-3 border-t border-[var(--rule)]">
             {results.map((hit) => (
-              <li key={hit.id}>
-                <button
-                  type="button"
-                  onClick={() => onAttach(hit)}
-                  className="flex min-h-12 w-full flex-col items-start px-3 py-2 text-left hover:bg-[#f3efe6]"
-                >
-                  <span className="font-medium">{hit.name}</span>
-                  <span className="text-sm text-[#5c5348]">
+              <li key={hit.id} className="border-b border-[var(--rule)]">
+                <button type="button" onClick={() => onAttach(hit)} className="flex min-h-12 w-full flex-col items-start py-2 text-left">
+                  <span className="font-serif text-lg">{hit.name}</span>
+                  <span className="text-sm text-[var(--quiet)]">
                     {hit.phone || "—"}
-                    {hit.lastVisitDate ? ` · ${hit.lastVisitDate}` : ""}
+                    {hit.lastVisitDate ? ` ${hit.lastVisitDate}` : ""}
                   </span>
                 </button>
               </li>
@@ -531,36 +526,39 @@ function AppointmentSheet({
           </ul>
         ) : null}
         <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.telefono}</span>
+          <span className="sr-only">{copy.telefono}</span>
           <input
             value={sheet.phone}
             readOnly={sheet.attached}
             onChange={(event) => onChange({ ...sheet, phone: event.target.value })}
-            className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg read-only:bg-[#f3efe6]"
+            placeholder={copy.telefono}
+            className="line"
             inputMode="tel"
             autoComplete="tel"
           />
         </label>
         {sheet.attached && sheet.clientId ? (
-          <Link href={`/clienti/${sheet.clientId}`} className="mb-3 inline-flex min-h-12 items-center font-medium text-[#9c3b2e]">
-            {copy.visits}
+          <Link href={`/clienti/${sheet.clientId}`} className="mb-4 inline-flex min-h-11 items-center underline decoration-[var(--rule)] underline-offset-4">
+            {copy.card}
           </Link>
         ) : null}
         <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.servizio}</span>
+          <span className="sr-only">{copy.servizio}</span>
           <input
             value={sheet.service}
             onChange={(event) => onChange({ ...sheet, service: event.target.value })}
-            className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
+            placeholder={copy.servizio}
+            className="line"
           />
         </label>
         <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.request}</span>
+          <span className="sr-only">{copy.request}</span>
           <textarea
             value={sheet.request}
             onChange={(event) => onChange({ ...sheet, request: event.target.value })}
-            rows={3}
-            className="mt-1 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 py-2 text-lg"
+            rows={2}
+            placeholder={copy.request}
+            className="line"
           />
         </label>
         <ClientLikes clientId={sheet.attached ? sheet.clientId : null} />
@@ -569,13 +567,13 @@ function AppointmentSheet({
           photos={sheet.photos}
           onPhotos={(photos) => onChange({ ...sheet, photos })}
         />
-        <div className="mb-3 grid grid-cols-2 gap-2">
+        <div className="mb-4 grid grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-sm font-medium">Poltrona</span>
+            <span className="text-sm text-[var(--quiet)]">Poltrona</span>
             <select
               value={sheet.stylistId}
               onChange={(event) => onChange({ ...sheet, stylistId: event.target.value })}
-              className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-2"
+              className="line"
             >
               {stylists.map((stylist) => (
                 <option key={stylist.id} value={stylist.id}>
@@ -585,12 +583,8 @@ function AppointmentSheet({
             </select>
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Ora</span>
-            <select
-              value={sheet.start}
-              onChange={(event) => onChange({ ...sheet, start: event.target.value })}
-              className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-2"
-            >
+            <span className="text-sm text-[var(--quiet)]">Ora</span>
+            <select value={sheet.start} onChange={(event) => onChange({ ...sheet, start: event.target.value })} className="line">
               {starts.map((start) => (
                 <option key={start} value={start}>
                   {start}
@@ -599,48 +593,42 @@ function AppointmentSheet({
             </select>
           </label>
         </div>
-        <p className="mb-1 text-sm font-medium">{copy.durata}</p>
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-3 flex flex-wrap gap-1">
           {DURATIONS.map((duration) => (
             <button
               key={duration}
               type="button"
               onClick={() => onChange({ ...sheet, durationMinutes: duration })}
-              className={`min-h-12 min-w-14 rounded-full px-3 ${sheet.durationMinutes === duration ? "bg-[#243246] text-white" : "bg-[#f3efe6]"}`}
+              className={`choice ${sheet.durationMinutes === duration ? "choice-on" : ""}`}
             >
               {duration}
             </button>
           ))}
         </div>
-        <p className="mb-1 text-sm font-medium">{copy.stato}</p>
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-5 flex flex-wrap gap-1">
           {STATUS_CODES.map((status) => (
             <button
               key={status}
               type="button"
               onClick={() => onChange({ ...sheet, status })}
-              className={`min-h-12 rounded-full px-3 ${sheet.status === status ? "bg-[#9c3b2e] text-white" : "bg-[#f3efe6]"}`}
+              className={`choice ${sheet.status === status ? "choice-on" : ""}`}
             >
               {statusLabel(status)}
             </button>
           ))}
         </div>
-        {notice ? <p className="mb-3 text-sm text-[#2f4a3c]">{notice}</p> : null}
+        {notice ? <p className="mb-3 text-sm">{notice}</p> : null}
         {error ? (
-          <p className="mb-3 rounded-xl bg-[#f8e4df] px-3 py-3 text-[#9c3b2e]" role="alert">
+          <p className="mb-3 text-[var(--alert)]" role="alert">
             {error}
           </p>
         ) : null}
         {clash ? (
-          <button type="button" onClick={onUseClash} className="mb-3 min-h-12 w-full rounded-xl border border-[#9c3b2e] font-medium text-[#9c3b2e]">
+          <button type="button" onClick={onUseClash} className="mb-3 min-h-12 w-full text-left font-medium text-[var(--alert)]">
             {copy.useThisClient}
           </button>
         ) : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="min-h-14 w-full rounded-2xl bg-[#1e1a16] text-lg text-white disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className="save">
           {copy.save}
         </button>
       </form>
@@ -673,8 +661,8 @@ function ClientLikes({ clientId }: { clientId: string | null }) {
 
   if (!clientId || likes.length === 0) return null;
   return (
-    <div className="mb-3 rounded-xl bg-[#f3efe6] px-3 py-3">
-      <p className="text-sm font-medium">{copy.likes}</p>
+    <div className="mb-4 border-t border-[var(--rule)] pt-3">
+      <p className="text-sm text-[var(--quiet)]">{copy.likes}</p>
       <ul className="mt-1 list-disc pl-5">
         {likes.map((line, index) => (
           <li key={`${line}-${index}`}>{line}</li>

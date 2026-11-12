@@ -44,39 +44,34 @@ export function ClientForm({ client, strips }: { client: ClientDetail; strips: R
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-4">
-      <Link href="/giorno" className="inline-flex min-h-12 items-center text-[#243246]">
-        {copy.backToDay}
-      </Link>
-      <h1 className="mt-2 mb-4 font-serif text-3xl">{client.name}</h1>
-      <form onSubmit={onSubmit} className="rounded-3xl bg-[#fffaf3] p-4">
+    <main className="mx-auto max-w-lg px-5 py-4">
+      <h1 className="sr-only">{client.name}</h1>
+      <form onSubmit={onSubmit} className="mt-2">
         <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.nome}</span>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
-          />
+          <span className="sr-only">{copy.nome}</span>
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder={copy.nome} className="line-name" />
         </label>
         <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.telefono}</span>
+          <span className="sr-only">{copy.telefono}</span>
           <input
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
+            placeholder={copy.telefono}
             inputMode="tel"
-            className="mt-1 min-h-12 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
+            className="line"
           />
         </label>
+        <ReferencePhotos clientId={client.id} strips={strips} />
         <div className="mb-3">
-          <span className="text-sm font-medium">{copy.likes}</span>
-          <ul className="mt-2 space-y-2">
+          <span className="text-sm text-[var(--quiet)]">{copy.likes}</span>
+          <ul className="mt-2">
             {likes.map((line, index) => (
-              <li key={`${line}-${index}`} className="flex items-center gap-2">
-                <span className="flex-1 rounded-xl bg-white px-3 py-2">{line}</span>
+              <li key={`${line}-${index}`} className="flex items-center gap-2 border-b border-[var(--rule)]">
+                <span className="flex-1 py-2">{line}</span>
                 <button
                   type="button"
                   onClick={() => setLikes(likes.filter((_, item) => item !== index))}
-                  className="min-h-10 px-2 text-sm text-[#9c3b2e]"
+                  className="min-h-10 px-2 text-sm text-[var(--alert)]"
                 >
                   {copy.remove}
                 </button>
@@ -87,7 +82,7 @@ export function ClientForm({ client, strips }: { client: ClientDetail; strips: R
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              className="min-h-12 flex-1 rounded-xl border border-[#e2d8c8] bg-white px-3 text-lg"
+              className="line"
             />
             <button
               type="button"
@@ -97,32 +92,26 @@ export function ClientForm({ client, strips }: { client: ClientDetail; strips: R
                 setLikes([...likes, text]);
                 setDraft("");
               }}
-              className="min-h-12 rounded-xl bg-[#243246] px-3 text-white"
+              className="min-h-12 px-2"
             >
               {copy.addLike}
             </button>
           </div>
         </div>
         <label className="mb-3 block">
-          <span className="text-sm font-medium">{copy.note}</span>
-          <textarea
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            rows={5}
-            className="mt-1 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 py-3 text-lg"
-          />
+          <span className="sr-only">{copy.note}</span>
+          <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={4} placeholder={copy.note} className="line" />
         </label>
         {error ? (
-          <p className="mb-3 text-[#9c3b2e]" role="alert">
+          <p className="mb-3 text-[var(--alert)]" role="alert">
             {error}
           </p>
         ) : null}
-        <button type="submit" disabled={pending} className="min-h-14 w-full rounded-2xl bg-[#1e1a16] text-lg text-white">
+        <button type="submit" disabled={pending} className="save">
           {copy.save}
         </button>
       </form>
-      <ReferencePhotos clientId={client.id} strips={strips} />
-      <h2 className="mt-8 mb-2 font-serif text-2xl">{copy.visits}</h2>
+      <h2 className="mt-10 mb-2 font-serif text-3xl">{copy.visits}</h2>
       <ul className="space-y-3">
         {client.visits.map((visit) => (
           <VisitFile key={visit.id} visit={visit} />
@@ -158,12 +147,12 @@ function VisitFile({ visit }: { visit: ClientVisitRow }) {
   }
 
   return (
-    <li className="rounded-2xl bg-[#fffaf3] px-3 py-3">
-      <Link href={`/giorno?d=${visit.dateKey}`} className="inline-flex min-h-10 items-center text-sm text-[#243246]">
+    <li className="border-t border-[var(--rule)] py-4">
+      <Link href={`/giorno?d=${visit.dateKey}`} className="inline-flex min-h-10 items-center text-sm underline decoration-[var(--rule)] underline-offset-4">
         {copy.openDay}
       </Link>
-      <span className="block font-medium">{visit.when}</span>
-      <span className="mb-2 block text-sm text-[#5c5348]">
+      <span className="block font-serif text-xl">{visit.when}</span>
+      <span className="mb-2 block text-sm text-[var(--quiet)]">
         {visit.stylistName}
         {visit.service ? ` · ${visit.service}` : ""} · {visit.status}
       </span>
@@ -173,20 +162,16 @@ function VisitFile({ visit }: { visit: ClientVisitRow }) {
           value={request}
           onChange={(event) => setRequest(event.target.value)}
           rows={3}
-          className="mt-1 w-full rounded-xl border border-[#e2d8c8] bg-white px-3 py-2 text-base"
+          placeholder={copy.request}
+          className="line"
         />
       </label>
-      <button
-        type="button"
-        onClick={saveRequest}
-        disabled={pending}
-        className="mb-3 min-h-12 rounded-xl bg-[#1e1a16] px-4 text-white"
-      >
+      <button type="button" onClick={saveRequest} disabled={pending} className="save mb-4">
         {copy.save}
       </button>
       <VisitPhotosFields visitId={visit.id} photos={photos} onPhotos={setPhotos} />
       {error ? (
-        <p className="text-[#9c3b2e]" role="alert">
+        <p className="text-[var(--alert)]" role="alert">
           {error}
         </p>
       ) : null}

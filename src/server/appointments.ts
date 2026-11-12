@@ -6,6 +6,7 @@ import { phoneDigits, resolveVisitClient } from "@/lib/clients";
 import { messageForCode } from "@/lib/messages";
 import { isOverlapError } from "@/lib/overlap-error";
 import type { Clash, DayVisit } from "@/lib/types";
+import { closureRules } from "@/server/catalog";
 import { getPrisma } from "@/server/prisma";
 import { toVisit } from "@/server/day";
 
@@ -29,9 +30,6 @@ export type SaveResult =
   | { ok: false; status: number; error: string; clash?: Clash; visit?: DayVisit };
 
 export async function saveAppointment(salonId: string, input: SaveInput): Promise<SaveResult> {
-  if (isClosed(input.dateKey)) {
-    return { ok: false, status: 409, error: copy.closed };
-  }
   if (!isDuration(input.durationMinutes)) {
     return { ok: false, status: 400, error: copy.closed };
   }
@@ -40,6 +38,12 @@ export async function saveAppointment(salonId: string, input: SaveInput): Promis
   }
 
   const prisma = getPrisma();
+  const salon = await prisma.salon.findFirst({ where: { id: salonId } });
+  if (!salon) return { ok: false, status: 400, error: copy.closed };
+  const rules = closureRules(salon);
+  if (isClosed(input.dateKey, rules)) {
+    return { ok: false, status: 409, error: copy.closed };
+  }
   const stylist = await prisma.stylist.findFirst({
     where: { id: input.stylistId, salonId },
   });
@@ -78,6 +82,7 @@ export async function saveAppointment(salonId: string, input: SaveInput): Promis
           storedUpdatedAt,
         },
         rows.map(toOccupying),
+        rules,
       );
       if (!decision.ok) {
         if (decision.code === "stale" && input.id) {

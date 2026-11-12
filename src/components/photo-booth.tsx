@@ -181,12 +181,12 @@ export function PhotoBooth({
   const filled = filledShots(phase);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#14110e] text-[#f3efe6]" role="dialog" aria-modal="true" aria-label={copy.reference}>
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#101614] text-[#f4f7f5]" role="dialog" aria-modal="true" aria-label={copy.reference}>
       <div className="relative min-h-0 flex-1">
         <video ref={videoRef} className="absolute inset-0 h-full w-full scale-x-[-1] object-cover" playsInline muted autoPlay />
         <div
           ref={frameRef}
-          className="booth-frame pointer-events-none absolute top-[46%] left-1/2 aspect-[3/4] w-[min(78%,22rem)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-[#e7d7b1]"
+          className="booth-frame pointer-events-none absolute top-[46%] left-1/2 aspect-[3/4] w-[min(72%,20rem)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-white"
         />
         {count !== null ? (
           <p key={`${phase.kind === "count" ? phase.shot : 0}-${count}`} className="booth-pop pointer-events-none absolute inset-0 flex items-center justify-center font-serif text-[7rem] leading-none text-white" aria-hidden="true">
@@ -201,7 +201,7 @@ export function PhotoBooth({
       <div className="flex flex-col gap-3 px-4 pt-3 pb-5">
         <div className="flex justify-center gap-2" aria-hidden="true">
           {Array.from({ length: SHOT_COUNT }, (_, index) => (
-            <span key={index} className={index < filled ? "h-2.5 w-2.5 rounded-full bg-[#e7d7b1]" : "h-2.5 w-2.5 rounded-full bg-[#f3efe6]/30"} />
+            <span key={index} className={index < filled ? "h-2 w-2 rounded-full bg-white" : "h-2 w-2 rounded-full bg-white/30"} />
           ))}
         </div>
         {phase.kind === "live" || phase.kind === "opening" ? (
@@ -214,16 +214,16 @@ export function PhotoBooth({
         ) : null}
         {phase.kind === "saving" ? <p className="text-center text-lg">{copy.save}</p> : null}
         <div className="flex gap-2">
-          <button type="button" onClick={onClose} disabled={phase.kind === "saving"} className="min-h-14 flex-1 rounded-2xl border border-[#e7d7b1]/50 text-lg">
+          <button type="button" onClick={onClose} disabled={phase.kind === "saving"} className="min-h-14 flex-1 border border-white/40 text-lg">
             {copy.close}
           </button>
           {phase.kind === "live" ? (
-            <button type="button" onClick={() => void run()} className="min-h-14 flex-[2] rounded-2xl bg-[#f3efe6] text-lg text-[#1e1a16]">
+            <button type="button" onClick={() => void run()} className="min-h-14 flex-[2] bg-[#f4f7f5] text-lg text-[#15211c]">
               {copy.shootStart}
             </button>
           ) : null}
           {phase.kind === "error" && held?.length === SHOT_COUNT ? (
-            <button type="button" onClick={() => void retry()} className="min-h-14 flex-[2] rounded-2xl bg-[#f3efe6] text-lg text-[#1e1a16]">
+            <button type="button" onClick={() => void retry()} className="min-h-14 flex-[2] bg-[#f4f7f5] text-lg text-[#15211c]">
               {copy.save}
             </button>
           ) : null}
